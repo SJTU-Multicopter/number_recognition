@@ -5,12 +5,16 @@
 #include <ml.h>
 #include <stdio.h>
 
+#define CLASS_SUM 10
+#define SQUARE_IMAGE_SIZE 16
+
 using namespace std;
+using namespace cv;
 
 int main(int argc, char **argv)
 {
 
-  ros::init(argc, argv, "training");
+  ros::init(argc, argv, "svm");
 
   ros::NodeHandle nh;
 
