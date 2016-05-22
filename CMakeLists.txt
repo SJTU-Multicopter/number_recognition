@@ -5,14 +5,14 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  message_generation
   sensor_msgs
   cv_bridge
   image_transport
+  message_generation
 )
 
-#find_package(OpenCV REQUIRED)
-find_package(OpenCV)
+find_package(OpenCV REQUIRED)
+#find_package(OpenCV)
 
 
 include_directories(
@@ -20,22 +20,24 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
+catkin_package(
+)
 
 add_executable(process
   src/process.cpp
 )
 target_link_libraries(process
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  #${OpenCV_LIBS}
+  #${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 add_executable(training
   src/training.cpp
 )
 target_link_libraries(training 
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  #${OpenCV_LIBS}
+  #${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 add_executable(recognition
@@ -43,8 +45,8 @@ add_executable(recognition
 )
 target_link_libraries(recognition 
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  #${OpenCV_LIBS}
+  #${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 add_executable(huawei
@@ -52,6 +54,6 @@ add_executable(huawei
 )
 target_link_libraries(huawei 
   ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  #${OpenCV_LIBS}
+  #${OpenCV_LIBRARIES}
+  ${OpenCV_LIBS}
 )

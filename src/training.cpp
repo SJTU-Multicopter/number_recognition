@@ -6,8 +6,9 @@
 #include <iostream>
 #include <stdio.h>
 
-#define CLASS_SUM 10
-#define SQUARE_IMAGE_SIZE 16
+#define CLASS_SUM 11
+#define SQUARE_IMAGE_SIZE_R 16
+#define SQUARE_IMAGE_SIZE_C 32
 
 using namespace std;
 using namespace cv;
@@ -78,7 +79,7 @@ void svm_train(int total_num)
 	//cout<<"total_num="<<total_num<<endl;
 
 	const int rols = total_num;
-	const int cols = SQUARE_IMAGE_SIZE*SQUARE_IMAGE_SIZE;
+	const int cols = SQUARE_IMAGE_SIZE_R*SQUARE_IMAGE_SIZE_C;
 	//cout<<rols<<"  "<<cols<<endl;
 
 	float training_data[rols][cols];
@@ -117,12 +118,12 @@ void svm_train(int total_num)
 					//save data and label        
 			training_label[seq_counter] = (float)class_seq;
 
-			for (int j=0; j<SQUARE_IMAGE_SIZE; j++)   //rols
+			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j++)   //rols
 			{  
 						uchar* raw= img_training.ptr<uchar>(j); 
-						for (int i=0; i<SQUARE_IMAGE_SIZE; i++)  //cols
+						for (int i=0; i<SQUARE_IMAGE_SIZE_C; i++)  //cols
 						{                   
-							training_data[seq_counter][j*SQUARE_IMAGE_SIZE+i] = (float)raw[i];      				  
+							training_data[seq_counter][j*SQUARE_IMAGE_SIZE_R+i] = (float)raw[i];      				  
 						}  
 			}
      

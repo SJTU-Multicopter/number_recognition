@@ -8,7 +8,6 @@
 #define CV_WHITE cvScalar(255,255,255,0)
 
 #define CLASS_SUM 10
-#define SQUARE_IMAGE_SIZE 16
 
 using namespace std;
 using namespace cv;

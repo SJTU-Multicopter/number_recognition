@@ -7,8 +7,11 @@
 #define CV_GREEN cvScalar(0,255,0,0)
 #define CV_WHITE cvScalar(255,255,255,0)
 
-#define CLASS_SUM 10
-#define SQUARE_IMAGE_SIZE 16
+#define CLASS_SUM 11
+#define SQUARE_IMAGE_SIZE_R 16
+#define SQUARE_IMAGE_SIZE_C 32
+
+#define THRESHOLD 80
 
 using namespace std;
 using namespace cv;
@@ -28,8 +31,8 @@ int main(int argc, char **argv)
 	{
 		for(int img_seq=0; ;img_seq++)
 		{
-			char image_name[80] = "/home/chg/catkin_ws/src/number_recognition/images/raw/";
-			char save_path[80] = "/home/chg/catkin_ws/src/number_recognition/images/processed/";
+			char image_name[100] = "/home/chg/catkin_ws/src/number_recognition/images/raw/";
+			char save_path[150] = "/home/chg/catkin_ws/src/number_recognition/images/processed/";
 
 			//add read path and name
 			char class_num[4];
@@ -37,12 +40,14 @@ int main(int argc, char **argv)
 			strcat(image_name,class_num);
 
 			char img_num[8];
-			sprintf(img_num,"%d.jpg",img_seq);
+			sprintf(img_num,"%d.png",img_seq);
 			strcat(image_name,img_num);
 	  
-			//add save path and name 
+			//add save path and name
+			char img_num2[8];
+			sprintf(img_num2,"%d.jpg",img_seq); 
 			strcat(save_path,class_num);
-			strcat(save_path,img_num);
+			strcat(save_path,img_num2);
 
 
 			//read image
@@ -60,7 +65,7 @@ int main(int argc, char **argv)
 			cvtColor(img_raw, img_gray, CV_BGR2GRAY);
 			blur( img_gray, img_blur, Size(3,3) ); 		
 
-			threshold(img_blur, img_white, 150, 255, THRESH_BINARY_INV);
+			threshold(img_blur, img_white, THRESHOLD, 255, THRESH_BINARY_INV);
 
 			vector<vector<Point> > contours;
 
@@ -78,7 +83,7 @@ int main(int argc, char **argv)
 				findContours(img_white_copy2, contours, RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 				cout<<"contours.size()="<<contours.size()<<endl;
 				if(contours.size()==1) break;
-				if(i==4) 
+				if(contours.size()==0 || i==4) 
 				{
 					cout<<"can not find contour of Class "<<class_seq<<", Image "<<img_seq<<"!"<<endl;
 					break;
@@ -99,7 +104,7 @@ int main(int argc, char **argv)
 			cvSetImageROI(&img_roi,roi);
 			 
 			// Resize
-			IplImage* img_final = cvCreateImage(cvSize(SQUARE_IMAGE_SIZE,SQUARE_IMAGE_SIZE), IPL_DEPTH_8U, 1);
+			IplImage* img_final = cvCreateImage(cvSize(SQUARE_IMAGE_SIZE_R,SQUARE_IMAGE_SIZE_C), IPL_DEPTH_8U, 1);
 			cvResize(&img_roi, img_final, CV_INTER_AREA);
 
 			//show image
@@ -107,7 +112,7 @@ int main(int argc, char **argv)
 			imshow("img_white", img_white);
 			//imshow("img_white_copy",img_white_copy);
 			//cvShowImage("img_roi",&img_roi);
-			//cvShowImage("img_final",img_final);
+			cvShowImage("img_final",img_final);
 	  
 			cvSaveImage(save_path, img_final);
 			
