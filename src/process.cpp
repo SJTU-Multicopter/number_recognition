@@ -9,7 +9,7 @@
 
 #define CLASS_SUM 11
 #define SQUARE_IMAGE_SIZE_R 16
-#define SQUARE_IMAGE_SIZE_C 32
+#define SQUARE_IMAGE_SIZE_C 24
 
 #define THRESHOLD 80
 

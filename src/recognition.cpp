@@ -13,7 +13,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #define SQUARE_IMAGE_SIZE_R 16
-#define SQUARE_IMAGE_SIZE_C 32
+#define SQUARE_IMAGE_SIZE_C 24
 
 #define CV_RED cvScalar(255,0,0,0)
 #define CV_GREEN cvScalar(0,255,0,0)
@@ -25,10 +25,10 @@ using namespace std;
 using namespace cv;
 
 CvSVM svm; 
-Mat image1, image2, image3;
+Mat image1, image2, image3, image_eg;
 ardrone_control::ROINumber result;
 const int rols = 1;
-const int cols = SQUARE_IMAGE_SIZE_R*SQUARE_IMAGE_SIZE_C;
+const int cols = SQUARE_IMAGE_SIZE_R*SQUARE_IMAGE_SIZE_C/4;;
 bool updated = false;
 bool img_right = false;
 
@@ -52,14 +52,15 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	        
 	        float training_data1[rols][cols];
 
-	        for (int j=0; j<SQUARE_IMAGE_SIZE_R; j++)   //rols
-	  		{  
-		  		uchar* raw= image1.ptr<uchar>(j); 
-	  	  		for (int i=0; i<SQUARE_IMAGE_SIZE_C; i++)  //cols
-		  		{                   
-			 		 training_data1[0][j*SQUARE_IMAGE_SIZE_R+i] = (float)raw[i];      				  
-		  		}  
-	  		}
+	        int ptr_num = 0;
+			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
+			{  
+				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
+				{                   
+					training_data1[0][ptr_num] = (image1.at<uchar>(i,j)+image1.at<uchar>(i+1,j)+image1.at<uchar>(i,j+1)+image1.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+				    ptr_num ++;
+				}  
+			}
 
 
 	  		Mat training_data_mat1(rols, cols, CV_32FC1, training_data1);
@@ -99,14 +100,15 @@ void  imageCallback(const ardrone_control::ROI &msg)
 		{
 			float training_data2[rols][cols];
 
-	        for (int j=0; j<SQUARE_IMAGE_SIZE_R; j++)   //rols
-	  		{  
-		  		uchar* raw= image2.ptr<uchar>(j); 
-	  	  		for (int i=0; i<SQUARE_IMAGE_SIZE_C; i++)  //cols
-		  		{                   
-			 		 training_data2[0][j*SQUARE_IMAGE_SIZE_R+i] = (float)raw[i];      				  
-		  		}  
-	  		}
+	        int ptr_num = 0;
+			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
+			{  
+				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
+				{                   
+					training_data2[0][ptr_num] = (image2.at<uchar>(i,j)+image2.at<uchar>(i+1,j)+image2.at<uchar>(i,j+1)+image2.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+				    ptr_num ++;
+				}  
+			}
 
 
 	  		Mat training_data_mat2(rols, cols, CV_32FC1, training_data2);
@@ -147,14 +149,15 @@ void  imageCallback(const ardrone_control::ROI &msg)
 		{
 			float training_data3[rols][cols];
 
-	        for (int j=0; j<SQUARE_IMAGE_SIZE_R; j++)   //rols
-	  		{  
-		  		uchar* raw= image3.ptr<uchar>(j); 
-	  	  		for (int i=0; i<SQUARE_IMAGE_SIZE_C; i++)  //cols
-		  		{                   
-			 		 training_data3[0][j*SQUARE_IMAGE_SIZE_R+i] = (float)raw[i];      				  
-		  		}  
-	  		}
+	        int ptr_num = 0;
+			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
+			{  
+				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
+				{                   
+					training_data3[0][ptr_num] = (image3.at<uchar>(i,j)+image3.at<uchar>(i+1,j)+image3.at<uchar>(i,j+1)+image3.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+				    ptr_num ++;
+				}  
+			}
 
 
 	  		Mat training_data_mat3(rols, cols, CV_32FC1, training_data3);
@@ -203,6 +206,35 @@ int main(int argc, char **argv)
 
   ros::Subscriber image_sub = nh.subscribe("/ROI_image", 1, imageCallback);
   ros::Publisher result_pub = nh.advertise<ardrone_control::ROINumber>("/number_result",5);  
+
+  
+  /*eg*/
+    char image_name[100] = "/home/chg/catkin_ws/src/number_recognition/images/test/3.png";
+    image_eg = imread(image_name);
+    cvtColor(image_eg, image_eg, CV_BGR2GRAY);
+    threshold(image_eg, image_eg, THRESHOLD, 255, THRESH_BINARY_INV);
+	image_eg = image_process(image_eg);
+
+	imshow("img_get",image_eg);
+	cvWaitKey(100);
+    
+    float training_data_eg[rols][cols];
+
+    int ptr_num = 0;
+	for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
+	{  
+		for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
+		{                   
+			training_data_eg[0][ptr_num] = (image_eg.at<uchar>(i,j)+image_eg.at<uchar>(i+1,j)+image_eg.at<uchar>(i,j+1)+image_eg.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+		    ptr_num ++;
+		}  
+	}
+
+
+	Mat training_data_mat_eg(rols, cols, CV_32FC1, training_data_eg);
+	float response_eg = svm.predict(training_data_mat_eg);
+	training_data_mat_eg.release();
+	cout<<"response_eg="<<response_eg<<endl;
 
   ros::Rate loop_rate(20);
   while (ros::ok())
