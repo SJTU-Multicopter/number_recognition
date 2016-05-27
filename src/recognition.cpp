@@ -12,14 +12,17 @@
 #include "cv_bridge/cv_bridge.h"
 #include <sensor_msgs/image_encodings.h>
 
-#define SQUARE_IMAGE_SIZE_R 16
-#define SQUARE_IMAGE_SIZE_C 24
+#define SQUARE_IMAGE_SIZE_R 24
+#define SQUARE_IMAGE_SIZE_C 36
 
 #define CV_RED cvScalar(255,0,0,0)
 #define CV_GREEN cvScalar(0,255,0,0)
 #define CV_WHITE cvScalar(255,255,255,0)
 
 #define THRESHOLD 100
+
+#define DETECT_NUM 10
+#define RIGHT_NUM 8
 
 using namespace std;
 using namespace cv;
@@ -33,6 +36,14 @@ bool updated = false;
 bool img_right = false;
 
 Mat image_process(Mat img_white);
+float training_data_eg[cols];
+
+int reg_counter1 = 0;
+int reg_number1[10] = {0};
+int reg_counter2 = 0;
+int reg_number2[10] = {0};
+int reg_counter3 = 0;
+int reg_number3[10] = {0};
 
 void  imageCallback(const ardrone_control::ROI &msg)
 {
@@ -40,24 +51,26 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	if(msg.total>0)
 	{
 		cv_bridge::CvImagePtr cv_ptr1;
-		cv_ptr1 = cv_bridge::toCvCopy(msg.image1, sensor_msgs::image_encodings::MONO8);
-
-		threshold(cv_ptr1->image, image1, THRESHOLD, 255, THRESH_BINARY_INV);
+		cv_ptr1 = cv_bridge::toCvCopy(msg.image1, sensor_msgs::image_encodings::BGR8);
+        
+        image1 = cv_ptr1->image;
         image1 = image_process(image1);
+        threshold(image1, image1, THRESHOLD, 255, THRESH_BINARY_INV);
 
         if(img_right)
         {
         	imshow("img_get",image1);
 			cvWaitKey(1);
 	        
-	        float training_data1[rols][cols];
+	        float training_data1[cols];
 
 	        int ptr_num = 0;
 			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
 			{  
 				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
 				{                   
-					training_data1[0][ptr_num] = (image1.at<uchar>(i,j)+image1.at<uchar>(i+1,j)+image1.at<uchar>(i,j+1)+image1.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+					float temp = (image1.at<uchar>(i,j)+image1.at<uchar>(i+1,j)+image1.at<uchar>(i,j+1)+image1.at<uchar>(i+1,j+1))/4.0/255.0;
+					training_data1[ptr_num] = temp;      				   
 				    ptr_num ++;
 				}  
 			}
@@ -68,20 +81,10 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	  		training_data_mat1.release();
 	  		cout<<"response1="<<response1<<endl;
 
-	  		int response1_n = (int)response1;
-	  		if(response1-response1_n < 0.05)
-	  		{
-	  			result.image1=response1_n;
-	  		}
-	  		else if(response1_n+1-response1 < 0.05)
-	  		{
-	  			result.image1=response1_n+1;
-	  		}
-	        else 
-	    	{
-	        	cout<<"Not Sure! "<<endl;
-	        	result.image1 = 14;
-	    	}
+            reg_counter1 ++;
+            int response1_int = (int)response1;
+	  		reg_number1[response1_int] ++;
+
         }
         else result.image1 = 14;
 			
@@ -91,21 +94,26 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	if(msg.total>1)
 	{
 		cv_bridge::CvImagePtr cv_ptr2;
-		cv_ptr2 = cv_bridge::toCvCopy(msg.image2, sensor_msgs::image_encodings::MONO8);
+		cv_ptr2 = cv_bridge::toCvCopy(msg.image2, sensor_msgs::image_encodings::BGR8);
+        
+        image2 = cv_ptr2->image;
+        image2 = image_process(image2);
+        threshold(image2, image2, THRESHOLD, 255, THRESH_BINARY_INV);
 
-		threshold(cv_ptr2->image, image2, THRESHOLD, 255, THRESH_BINARY_INV);
-		image2 = image_process(image2);
-
-		if(img_right)
-		{
-			float training_data2[rols][cols];
+        if(img_right)
+        {
+        	imshow("img_get",image2);
+			cvWaitKey(1);
+	        
+	        float training_data2[cols];
 
 	        int ptr_num = 0;
 			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
 			{  
 				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
 				{                   
-					training_data2[0][ptr_num] = (image2.at<uchar>(i,j)+image2.at<uchar>(i+1,j)+image2.at<uchar>(i,j+1)+image2.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+					float temp = (image2.at<uchar>(i,j)+image2.at<uchar>(i+1,j)+image2.at<uchar>(i,j+1)+image2.at<uchar>(i+1,j+1))/4.0/255.0;
+					training_data2[ptr_num] = temp;      				   
 				    ptr_num ++;
 				}  
 			}
@@ -116,20 +124,10 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	  		training_data_mat2.release();
 	  		cout<<"response2="<<response2<<endl;
 
-	  		int response2_n = (int)response2;
-	  		if(response2-response2_n < 0.05)
-	  		{
-	  			result.image2=response2_n;
-	  		}
-	  		else if(response2_n+1-response2 < 0.05)
-	  		{
-	  			result.image2=response2_n+1;
-	  		}
-	        else 
-	    	{
-	        	cout<<"Not Sure! "<<endl;
-	        	result.image2 = 14;
-	    	}
+	  		reg_counter2 ++;
+            int response2_int = (int)response2;
+	  		reg_number2[response2_int] ++;
+
 		}
 		else result.image2 = 14;
                 
@@ -140,21 +138,26 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	if(msg.total>2)
 	{
 		cv_bridge::CvImagePtr cv_ptr3;
-		cv_ptr3 = cv_bridge::toCvCopy(msg.image3, sensor_msgs::image_encodings::MONO8);
+		cv_ptr3 = cv_bridge::toCvCopy(msg.image3, sensor_msgs::image_encodings::BGR8);
+        
+        image3 = cv_ptr3->image;
+        image3 = image_process(image3);
+        threshold(image3, image3, THRESHOLD, 255, THRESH_BINARY_INV);
 
-		threshold(cv_ptr3->image, image3, THRESHOLD, 255, THRESH_BINARY_INV);
-		image3 = image_process(image3);
-
-		if(img_right)
-		{
-			float training_data3[rols][cols];
+        if(img_right)
+        {
+        	imshow("img_get",image3);
+			cvWaitKey(1);
+	        
+	        float training_data3[cols];
 
 	        int ptr_num = 0;
 			for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
 			{  
 				for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
 				{                   
-					training_data3[0][ptr_num] = (image3.at<uchar>(i,j)+image3.at<uchar>(i+1,j)+image3.at<uchar>(i,j+1)+image3.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+					float temp = (image3.at<uchar>(i,j)+image3.at<uchar>(i+1,j)+image3.at<uchar>(i,j+1)+image3.at<uchar>(i+1,j+1))/4.0/255.0;
+					training_data3[ptr_num] = temp;      				   
 				    ptr_num ++;
 				}  
 			}
@@ -165,30 +168,130 @@ void  imageCallback(const ardrone_control::ROI &msg)
 	  		training_data_mat3.release();
 	  		cout<<"response3="<<response3<<endl;
 
-	  		int response3_n = (int)response3;
-	  		if(response3-response3_n < 0.05)
-	  		{
-	  			result.image3=response3_n;
-	  		}
-	  		else if(response3_n+1-response3 < 0.05)
-	  		{
-	  			result.image3=response3_n+1;
-	  		}
-	        else 
-	    	{
-	        	cout<<"Not Sure! "<<endl;
-	        	result.image3 = 14;
-	    	}	
+	  		reg_counter3 ++;
+            int response3_int = (int)response3;
+	  		reg_number3[response3_int] ++;
 		}
         
         
+	}
+    
+    //tell result
+	switch(msg.total)
+	{
+		case 1:
+        	if(reg_counter1>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number1[i]>=RIGHT_NUM) {result.image1=i; found=true;}
+        		}
+        		if(found)
+        		{
+        			result.image2=10;
+        			result.image3=10;
+        			updated = true;
+        		}
+        		
+        		reg_counter1 = 0;
+        		memset(reg_number1,0,10*sizeof(int));
+        	}
+        	break;
+
+		case 2:
+			if(reg_counter1>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number1[i]>=RIGHT_NUM) {result.image1=i; found=true;}
+        		}
+        		if(found)
+        		{
+        			result.image2=10;
+        			result.image3=10;
+        			updated = true;
+        		}
+        		
+        		reg_counter1 = 0;
+        		memset(reg_number1,0,10*sizeof(int));
+        	}
+        	if(reg_counter2>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number2[i]>=RIGHT_NUM) {result.image2=i;found = true;}
+        		}
+        		if(found)
+        		{
+        			result.image3=10;
+        			updated = true;
+        		}
+        		
+        		reg_counter2 = 0;
+        		memset(reg_number2,0,10*sizeof(int));
+        	}
+        	break;
+
+		case 3:
+			if(reg_counter1>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number1[i]>=RIGHT_NUM) {result.image1=i;found = true;}
+        		}
+        		if(found)
+        		{
+        			result.image2=10;
+        			result.image3=10;
+        			updated = true;
+        		}
+
+        		reg_counter1 = 0;
+        		memset(reg_number1,0,10*sizeof(int));
+        	}
+        	if(reg_counter2>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number2[i]>=RIGHT_NUM) {result.image2=i;found = true;}
+        		}
+        		if(found)
+        		{
+        			result.image3=10;
+        			updated = true;
+        		}
+        		
+        		reg_counter2 = 0;
+        		memset(reg_number2,0,10*sizeof(int));
+        	}
+        	if(reg_counter3>=DETECT_NUM)
+        	{
+        		bool found = false;
+        		for(int i=0;i<10;i++)
+        		{
+        			if(reg_number3[i]>=RIGHT_NUM) {result.image3=i;found = true;}
+        		}
+
+        		if(found)updated = true;
+        		
+        		reg_counter3 = 0;
+        		memset(reg_number3,0,10*sizeof(int));
+        	}
+        	break;
+
+		default: break;
+
 	}
 
     result.total = msg.total;
     result.pose1 = msg.pose1;
     result.pose2 = msg.pose2;
     result.pose3 = msg.pose3;
-    updated = true;
 
 	
 }  
@@ -204,38 +307,41 @@ int main(int argc, char **argv)
   svm.load( "/home/chg/SVM_DATA.xml" );
   cout<<"Finished!"<<endl;
 
-  ros::Subscriber image_sub = nh.subscribe("/ROI_image", 1, imageCallback);
+  ros::Subscriber image_sub = nh.subscribe("/ROI", 1, imageCallback);
   ros::Publisher result_pub = nh.advertise<ardrone_control::ROINumber>("/number_result",5);  
 
   
   /*eg*/
+  /*
     char image_name[100] = "/home/chg/catkin_ws/src/number_recognition/images/test/3.png";
     image_eg = imread(image_name);
-    cvtColor(image_eg, image_eg, CV_BGR2GRAY);
-    threshold(image_eg, image_eg, THRESHOLD, 255, THRESH_BINARY_INV);
+     
 	image_eg = image_process(image_eg);
+	threshold(image_eg, image_eg, THRESHOLD, 255, THRESH_BINARY_INV);
 
-	imshow("img_get",image_eg);
+	imshow("img_eg",image_eg);
 	cvWaitKey(100);
-    
-    float training_data_eg[rols][cols];
+    //cout<<image_eg<<endl;
 
     int ptr_num = 0;
 	for (int j=0; j<SQUARE_IMAGE_SIZE_R; j+=2)   //rols
 	{  
 		for (int i=0; i<SQUARE_IMAGE_SIZE_C; i+=2)  //cols
 		{                   
-			training_data_eg[0][ptr_num] = (image_eg.at<uchar>(i,j)+image_eg.at<uchar>(i+1,j)+image_eg.at<uchar>(i,j+1)+image_eg.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+			float temp = ((float)image_eg.at<uchar>(i,j)+(float)image_eg.at<uchar>(i+1,j)+(float)image_eg.at<uchar>(i,j+1)+(float)image_eg.at<uchar>(i+1,j+1))/4.0/255.0;      				   
+		    training_data_eg[ptr_num] = temp;
 		    ptr_num ++;
 		}  
 	}
-
+	for(int i =0; i<cols; i++)   cout<<training_data_eg[i]<<" ";
 
 	Mat training_data_mat_eg(rols, cols, CV_32FC1, training_data_eg);
 	float response_eg = svm.predict(training_data_mat_eg);
 	training_data_mat_eg.release();
 	cout<<"response_eg="<<response_eg<<endl;
+	*/
 
+  cout<<"Ready to recognize!"<<endl;
   ros::Rate loop_rate(20);
   while (ros::ok())
   {
@@ -255,6 +361,10 @@ int main(int argc, char **argv)
 
 Mat image_process(Mat img_white)
 {
+    cvtColor(img_white, img_white, CV_BGR2GRAY);
+    blur( img_white, img_white, Size(3,3) );  
+	threshold(img_white, img_white, THRESHOLD, 255, THRESH_BINARY_INV);
+
 	vector<vector<Point> > contours;
 
 	Mat img_white_copy, img_white_copy2;
@@ -267,13 +377,17 @@ Mat image_process(Mat img_white)
 	{		
 		// Find and draw contours     
 		findContours(img_white_copy2, contours, RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-		cout<<"contours.size()="<<contours.size()<<endl;
-		if(contours.size()==1) 
+		//cout<<"contours.size()="<<contours.size()<<endl;
+
+		float img_x = img_white.cols;
+		float img_y = img_white.rows;
+
+		if(contours.size()==1 && fabs(img_x-img_y)<(img_x/10)) 
 		{
 			img_right = true;
 			break;	
 		}
-		if(contours.size()==0||i==4) 
+		if(contours.size()==0||i==4||fabs(img_x-img_y)>=(img_x/10)) 
 		{
 			img_right = false;
 			return img_white;

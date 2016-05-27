@@ -8,10 +8,10 @@
 #define CV_WHITE cvScalar(255,255,255,0)
 
 #define CLASS_SUM 11
-#define SQUARE_IMAGE_SIZE_R 16
-#define SQUARE_IMAGE_SIZE_C 24
+#define SQUARE_IMAGE_SIZE_R 24
+#define SQUARE_IMAGE_SIZE_C 36
 
-#define THRESHOLD 80
+#define THRESHOLD 60
 
 using namespace std;
 using namespace cv;

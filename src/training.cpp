@@ -7,8 +7,8 @@
 #include <stdio.h>
 
 #define CLASS_SUM 11
-#define SQUARE_IMAGE_SIZE_R 16
-#define SQUARE_IMAGE_SIZE_C 24
+#define SQUARE_IMAGE_SIZE_R 24
+#define SQUARE_IMAGE_SIZE_C 36
 
 using namespace std;
 using namespace cv;
@@ -114,6 +114,9 @@ void svm_train(int total_num)
 			}
 
 			threshold(img_training, img_training, 150, 255, THRESH_BINARY_INV);
+
+			imshow("img_training",img_training);
+			cvWaitKey(100);
 					
 					//save data and label        
 			training_label[seq_counter] = (float)class_seq;
